@@ -4,7 +4,7 @@ import {ElementContainer, FLAGS} from '../../dom/element-container';
 import {BORDER_STYLE} from '../../css/property-descriptors/border-style';
 import {CSSParsedDeclaration} from '../../css';
 import {TextContainer} from '../../dom/text-container';
-import {Path, transformPath,reversePath} from '../path';
+import {Path, transformPath, reversePath } from '../path';
 import {BACKGROUND_CLIP} from '../../css/property-descriptors/background-clip';
 import {BoundCurves, calculateBorderBoxPath, calculateContentBoxPath, calculatePaddingBoxPath} from '../bound-curves';
 import {BezierCurve, isBezierCurve} from '../bezier-curve';
@@ -44,7 +44,7 @@ import {PAINT_ORDER_LAYER} from '../../css/property-descriptors/paint-order';
 import {Renderer} from '../renderer';
 import {Context} from '../../core/context';
 import {DIRECTION} from '../../css/property-descriptors/direction';
-
+import {calculateObjectFitBounds} from '../object-fit';
 export type RenderConfigurations = RenderOptions & {
     backgroundColor: Color | null;
 };
@@ -58,7 +58,6 @@ export interface RenderOptions {
     height: number;
 }
 
-const MASK_OFFSET = 10000;
 
 export class CanvasRenderer extends Renderer {
     canvas: HTMLCanvasElement;
@@ -274,18 +273,26 @@ export class CanvasRenderer extends Renderer {
             const box = contentBox(container);
             const path = calculatePaddingBoxPath(curves);
             this.path(path);
+            const {src, dest} = calculateObjectFitBounds(
+                container.styles.objectFit,
+                container.styles.objectPosition,
+                container.intrinsicWidth,
+                container.intrinsicHeight,
+                box.width,
+                box.height
+            );
             this.ctx.save();
             this.ctx.clip();
             this.ctx.drawImage(
                 image,
-                0,
-                0,
-                container.intrinsicWidth,
-                container.intrinsicHeight,
-                box.left,
-                box.top,
-                box.width,
-                box.height
+                src.left,
+                src.top,
+                src.width,
+                src.height,
+                box.left + dest.left,
+                box.top + dest.top,
+                dest.width,
+                dest.height
             );
             this.ctx.restore();
         }
@@ -532,7 +539,7 @@ export class CanvasRenderer extends Renderer {
         this.ctx.lineTo(0, this.canvas.height);
         this.ctx.lineTo(0, 0);
         this.ctx.restore();
-        this.formatPath(reversePath(paths)); 
+        this.formatPath(reversePath(paths));
         this.ctx.closePath();
     }
 
@@ -619,7 +626,7 @@ export class CanvasRenderer extends Renderer {
                 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
                 const gradient = ctx.createLinearGradient(x0, y0, x1, y1);
 
-                processColorStops(backgroundImage.stops, lineLength).forEach((colorStop) =>
+                processColorStops(backgroundImage.stops, lineLength || 1).forEach((colorStop) =>
                     gradient.addColorStop(colorStop.stop, asString(colorStop.color))
                 );
 
@@ -715,20 +722,20 @@ export class CanvasRenderer extends Renderer {
 
             if (!isTransparent(styles.backgroundColor)) {
                 this.ctx.fillStyle = asString(styles.backgroundColor);
-                this.ctx.fill();                
+                this.ctx.fill();
             }
 
             await this.renderBackgroundImage(paint.container);
 
             this.ctx.restore();
-
+            const borderBoxArea = calculateBorderBoxPath(paint.curves);
             styles.boxShadow
                 .slice(0)
                 .reverse()
                 .forEach((shadow) => {
                     this.ctx.save();
-                    const borderBoxArea = calculateBorderBoxPath(paint.curves);
-                    const maskOffset = shadow.inset ? 0 : MASK_OFFSET;
+                    // const borderBoxArea = calculateBorderBoxPath(paint.curves);
+                    const maskOffset = shadow.inset ? 0 : 1;
                     const shadowPaintingArea = transformPath(
                         borderBoxArea,
                         shadow.offsetX.number - maskOffset + (shadow.inset ? 1 : -1) * shadow.spread.number,
@@ -755,7 +762,7 @@ export class CanvasRenderer extends Renderer {
                     }
                     this.ctx.fill()
                     this.ctx.restore()
-                    
+
 
                 });
         }

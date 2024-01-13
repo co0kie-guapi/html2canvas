@@ -41,6 +41,8 @@ import {listStyleImage} from './property-descriptors/list-style-image';
 import {listStylePosition} from './property-descriptors/list-style-position';
 import {listStyleType} from './property-descriptors/list-style-type';
 import {marginBottom, marginLeft, marginRight, marginTop} from './property-descriptors/margin';
+import {objectFit} from './property-descriptors/object-fit';
+import {objectPosition} from './property-descriptors/object-position';
 import {overflow, OVERFLOW} from './property-descriptors/overflow';
 import {overflowWrap} from './property-descriptors/overflow-wrap';
 import {paddingBottom, paddingLeft, paddingRight, paddingTop} from './property-descriptors/padding';
@@ -127,6 +129,8 @@ export class CSSParsedDeclaration {
     marginBottom: CSSValue;
     marginLeft: CSSValue;
     opacity: ReturnType<typeof opacity.parse>;
+    objectFit: ReturnType<typeof objectFit.parse>;
+    objectPosition: ReturnType<typeof objectPosition.parse>;
     overflowX: OVERFLOW;
     overflowY: OVERFLOW;
     overflowWrap: ReturnType<typeof overflowWrap.parse>;
@@ -195,6 +199,8 @@ export class CSSParsedDeclaration {
         this.marginBottom = parse(context, marginBottom, declaration.marginBottom);
         this.marginLeft = parse(context, marginLeft, declaration.marginLeft);
         this.opacity = parse(context, opacity, declaration.opacity);
+        this.objectFit = parse(context, objectFit, declaration.objectFit);
+        this.objectPosition = parse(context, objectPosition, declaration.objectPosition);
         const overflowTuple = parse(context, overflow, declaration.overflow);
         this.overflowX = overflowTuple[0];
         this.overflowY = overflowTuple[overflowTuple.length > 1 ? 1 : 0];
