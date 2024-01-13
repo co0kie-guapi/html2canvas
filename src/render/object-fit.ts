@@ -1,7 +1,6 @@
 import {Bounds} from '../css/layout/bounds';
 import {OBJECT_FIT} from '../css/property-descriptors/object-fit';
 import {ObjectPosition} from '../css/property-descriptors/object-position';
-import {getAbsoluteValueForTuple} from '../css/types/length-percentage';
 
 export const calculateObjectFitBounds = (
     objectFit: OBJECT_FIT,
@@ -17,8 +16,7 @@ export const calculateObjectFitBounds = (
     // 'object-position' is not currently supported, so use default value of 50% 50%.
     // const objectPositionX = 0.5;
     // const objectPositionY = 0.5;
-    const position = getAbsoluteValueForTuple(objectPosition, naturalWidth - clientWidth, naturalHeight - clientHeight);
-
+    // const position = getAbsoluteValueForTuple(objectPosition, naturalWidth - clientWidth, naturalHeight - clientHeight);
     let srcX: number,
         srcY: number,
         srcWidth: number,
@@ -35,6 +33,13 @@ export const calculateObjectFitBounds = (
                 : OBJECT_FIT.CONTAIN; // at least one axes is greater or equal in size
     }
 
+    if (objectPosition.isPercentage) {
+        objectPosition.x = objectPosition.x * 0.01;
+        objectPosition.y = objectPosition.y * 0.01;
+    }
+
+    // console.log(`objectPositionX: ${position[0]}; objectPositionY: ${position[1]}`);
+
     switch (objectFit) {
         case OBJECT_FIT.CONTAIN:
             srcX = 0;
@@ -46,13 +51,13 @@ export const calculateObjectFitBounds = (
                 destY = 0;
                 destHeight = clientHeight;
                 destWidth = destHeight * naturalRatio;
-                destX = position[0];
+                destX = objectPosition.isPercentage ? (clientWidth - destWidth) * objectPosition.x : objectPosition.x;
             } else {
                 // snap to left/right
                 destX = 0;
                 destWidth = clientWidth;
                 destHeight = destWidth / naturalRatio;
-                destY = position[1];
+                destY = objectPosition.isPercentage ? (clientWidth - destHeight) * objectPosition.y : objectPosition.y;
             }
             break;
 
@@ -66,13 +71,13 @@ export const calculateObjectFitBounds = (
                 srcX = 0;
                 srcWidth = naturalWidth;
                 srcHeight = clientHeight * (naturalWidth / clientWidth);
-                srcY = position[1];
+                srcY = objectPosition.isPercentage ? (naturalHeight - srcHeight) * objectPosition.y : objectPosition.y;
             } else {
                 // fill top/bottom
                 srcY = 0;
                 srcHeight = naturalHeight;
                 srcWidth = clientWidth * (naturalHeight / clientHeight);
-                srcX = position[0];
+                srcX = objectPosition.isPercentage ? (naturalWidth - srcWidth) * objectPosition.x : objectPosition.x;
             }
             break;
 
@@ -80,10 +85,10 @@ export const calculateObjectFitBounds = (
             if (naturalWidth < clientWidth) {
                 srcX = 0;
                 srcWidth = naturalWidth;
-                destX = position[0];
+                destX = objectPosition.isPercentage ? (clientWidth - naturalWidth) * objectPosition.x : objectPosition.x;
                 destWidth = naturalWidth;
             } else {
-                srcX = position[0];
+                srcX = objectPosition.isPercentage ? (naturalWidth - clientWidth) * objectPosition.x : objectPosition.x;
                 srcWidth = clientWidth;
                 destX = 0;
                 destWidth = clientWidth;
@@ -91,10 +96,10 @@ export const calculateObjectFitBounds = (
             if (naturalHeight < clientHeight) {
                 srcY = 0;
                 srcHeight = naturalHeight;
-                destY = position[1];
+                destY = objectPosition.isPercentage ? (clientHeight - naturalHeight) * objectPosition.y : objectPosition.y;
                 destHeight = naturalHeight;
             } else {
-                srcY = position[1];
+                srcY = objectPosition.isPercentage ? (naturalHeight - clientHeight) * objectPosition.y : objectPosition.y;
                 srcHeight = clientHeight;
                 destY = 0;
                 destHeight = clientHeight;
